@@ -34,6 +34,7 @@ struct find_dwarf_info
 {
     const char *filename;
     const char *functionname;
+    unsigned int offsetAddr;
     unsigned int line;
     bool found;
 };

@@ -43,6 +43,7 @@ static void
 search_func(Dwarf_Debug dbg,
             Dwarf_Die die,
             Dwarf_Addr addr,
+            unsigned int *offsetAddr,
             char **rlt_func)
 {
     Dwarf_Die spec_die;
@@ -78,6 +79,7 @@ search_func(Dwarf_Debug dbg,
 
             /* Found it! */
 
+            *offsetAddr = addr - lopc;
             *rlt_func = unknown;
             ret = dwarf_attr(die, DW_AT_name, &sub_at, &de);
             if (ret == DW_DLV_ERROR)
@@ -114,7 +116,7 @@ search_func(Dwarf_Debug dbg,
         if (ret == DW_DLV_ERROR)
             OutputDebug("MGWHELP: dwarf_child failed - %s\n", dwarf_errmsg(de));
         else if (ret == DW_DLV_OK)
-            search_func(dbg, child_die, addr, rlt_func);
+            search_func(dbg, child_die, addr, offsetAddr, rlt_func);
 
         /* Advance to next sibling. */
         ret = dwarf_siblingof(dbg, die, &sibling_die, &de);
@@ -134,6 +136,7 @@ find_dwarf_symbol(Dwarf_Debug dbg,
                   struct find_dwarf_info *info)
 {
     Dwarf_Error error = 0;
+    unsigned int offsetAddr;
     char *funcname = NULL;
 
     Dwarf_Arange *aranges;
@@ -157,9 +160,10 @@ find_dwarf_symbol(Dwarf_Debug dbg,
         goto no_cu_die;
     }
 
-    search_func(dbg, cu_die, addr, &funcname);
+    search_func(dbg, cu_die, addr, &offsetAddr, &funcname);
     if (funcname) {
         info->functionname = funcname;
+        info->offsetAddr = offsetAddr;
         info->found = true;
     }
 
